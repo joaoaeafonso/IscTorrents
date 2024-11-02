@@ -14,6 +14,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class ConnectionManager implements MessageVisitor {
 
@@ -24,13 +25,22 @@ public class ConnectionManager implements MessageVisitor {
     private ServerSocket serverSocket;
     private final List<PeerInformation> connectedPeers = new ArrayList<>();
 
-    public ConnectionManager(String ipAddress, int port, String id) {
+    private static ConnectionManager instance;
+
+    private ConnectionManager(String ipAddress, int port) {
+        String id = generateIdentifier(ipAddress, port);
         this.information = new PeerInformation(ipAddress, port, id);
         this.port = port;
     }
 
-    public void receiveMessage(Message message) {
-        message.accept(this);
+    public static synchronized  ConnectionManager getInstance() {
+        return instance;
+    }
+
+    public static synchronized  void createInstance(String ipAddress, int port) {
+        if( null == instance ) {
+            instance = new ConnectionManager(ipAddress, port);
+        }
     }
 
     public void startServer() {
@@ -49,6 +59,10 @@ public class ConnectionManager implements MessageVisitor {
         }
     }
 
+    private void receiveMessage(Message message) {
+        message.accept(this);
+    }
+
     private void listenForMessages(Socket socket) {
         try (ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
             while (true) {
@@ -58,6 +72,11 @@ public class ConnectionManager implements MessageVisitor {
         } catch (IOException | ClassNotFoundException ex) {
             System.err.println("Exception occurred. Cause: "+ex.getCause()+", Message: "+ex.getMessage());
         }
+    }
+
+    private String generateIdentifier(String ipAddress, int port) {
+        String data = ipAddress + port;
+        return Integer.toHexString(Objects.hash(data));
     }
 
     public void sendMessage(PeerInformation peerInfo, Message message) {

@@ -1,6 +1,9 @@
+import connection.ConnectionManager;
+import files.FileManager;
 import gui.Gui;
 
 import java.io.File;
+import java.util.List;
 
 public class Main {
 
@@ -27,6 +30,16 @@ public class Main {
             System.err.println("Directory "+fileDirectoryName+" is not a valid directory for " +
                     "path = "+dir.getAbsolutePath()+". Cannot proceed.");
             return;
+        }
+
+        ConnectionManager.createInstance("127.0.0.1", connectionPort);
+        //ConnectionManager.getInstance().startServer();
+
+        FileManager.createInstance(dir);
+        List<File> ficheiros = FileManager.getInstance().readFiles();
+
+        for(File file: ficheiros) {
+            System.out.println(file.toString());
         }
 
         Gui application = new Gui("127.0.0.1", connectionPort, dir);

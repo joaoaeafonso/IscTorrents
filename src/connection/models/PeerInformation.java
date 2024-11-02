@@ -12,7 +12,7 @@ public class PeerInformation {
     public PeerInformation(String ipAddress, int port, String id) {
         this.ipAddress = ipAddress;
         this.port = port;
-        this.identifier = generateIdentifier(id, ipAddress, port);
+        this.identifier = id;
     }
 
     public String getIpAddress() {
@@ -25,11 +25,6 @@ public class PeerInformation {
 
     public String getIdentifier() {
         return identifier;
-    }
-
-    private String generateIdentifier(String id, String ipAddress, int port) {
-        String data = id + ipAddress + port;
-        return Integer.toHexString(Objects.hash(data));
     }
 
     @Override
