@@ -3,6 +3,7 @@ package connection;
 import connection.messages.Message;
 import connection.messages.MessageVisitor;
 import connection.messages.NewConnectionRequest;
+import connection.messages.WordSearchMessage;
 import connection.models.MessageType;
 import connection.models.PeerInformation;
 
@@ -82,5 +83,10 @@ public class ConnectionManager implements MessageVisitor {
         NewConnectionRequest ackMessage = new NewConnectionRequest(this.information, MessageType.CONNECTION_ACKNOWLEDGE);
         System.out.println("Sending message "+ ackMessage);
         sendMessage(message.getPeerInformation(), ackMessage);
+    }
+
+    @Override
+    public void visit(WordSearchMessage message) {
+        //TODO
     }
 }
