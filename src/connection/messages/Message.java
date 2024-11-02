@@ -21,4 +21,9 @@ public abstract class Message {
     }
 
     public abstract void accept(MessageVisitor visitor);
+
+    @Override
+    public String toString() {
+        return "From: "+this.sender.toString() + " of Type: " + this.type.toString()+".";
+    }
 }

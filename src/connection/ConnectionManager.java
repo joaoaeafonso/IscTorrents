@@ -3,6 +3,7 @@ package connection;
 import connection.messages.Message;
 import connection.messages.MessageVisitor;
 import connection.messages.NewConnectionRequest;
+import connection.models.MessageType;
 import connection.models.PeerInformation;
 
 import java.io.IOException;
@@ -20,7 +21,7 @@ public class ConnectionManager implements MessageVisitor {
     private final int port;
 
     private ServerSocket serverSocket;
-    private List<NewConnectionRequest> connectedPeers = new ArrayList<>();
+    private final List<PeerInformation> connectedPeers = new ArrayList<>();
 
     public ConnectionManager(String ipAddress, int port, String id) {
         this.information = new PeerInformation(ipAddress, port, id);
@@ -64,7 +65,6 @@ public class ConnectionManager implements MessageVisitor {
 
             out.writeObject(message);
             out.flush();
-            System.out.println("Message sent to");
         } catch (IOException ex) {
             System.err.println("Exception occurred. Cause: "+ex.getCause()+", Message: "+ex.getMessage());
         }
@@ -72,6 +72,15 @@ public class ConnectionManager implements MessageVisitor {
 
     @Override
     public void visit(NewConnectionRequest message) {
-        //TODO
+        if(connectedPeers.contains(message.getPeerInformation())) {
+            System.out.println(message.getPeerInformation()+" is already present in the connections.");
+            return;
+        }
+
+        connectedPeers.add(message.getPeerInformation());
+
+        NewConnectionRequest ackMessage = new NewConnectionRequest(this.information, MessageType.CONNECTION_ACKNOWLEDGE);
+        System.out.println("Sending message "+ ackMessage);
+        sendMessage(message.getPeerInformation(), ackMessage);
     }
 }
