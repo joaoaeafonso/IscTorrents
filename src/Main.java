@@ -1,4 +1,4 @@
-import gui.IscTorrentsGui;
+import gui.Gui;
 
 import java.io.File;
 
@@ -29,7 +29,7 @@ public class Main {
             return;
         }
 
-        IscTorrentsGui application = new IscTorrentsGui("127.0.0.1", connectionPort, dir);
+        Gui application = new Gui("127.0.0.1", connectionPort, dir);
         application.open();
 
     }

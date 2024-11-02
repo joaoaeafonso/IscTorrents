@@ -6,7 +6,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 
-public class IscTorrentsGui {
+public class Gui {
 
     private final JFrame frame;
 
@@ -17,7 +17,7 @@ public class IscTorrentsGui {
     private JList<String> resultList;
     private DefaultListModel<String> listModel;
 
-    public IscTorrentsGui(String address, int port, File fileDir) {
+    public Gui(String address, int port, File fileDir) {
         frame = new JFrame("Port Node Address[address="+address+", port="+port+"]");
         frame.setLayout(new BorderLayout());
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
