@@ -1,13 +1,14 @@
+package gui;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 
 public class IscTorrentsGui {
 
     private final JFrame frame;
-
-    private JTextField searchField;
 
     private JButton searchButton;
     private JButton downloadButton;
@@ -16,7 +17,7 @@ public class IscTorrentsGui {
     private JList<String> resultList;
     private DefaultListModel<String> listModel;
 
-    public IscTorrentsGui(String address, int port) {
+    public IscTorrentsGui(String address, int port, File fileDir) {
         frame = new JFrame("Port Node Address[address="+address+", port="+port+"]");
         frame.setLayout(new BorderLayout());
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -65,7 +66,7 @@ public class IscTorrentsGui {
         JLabel searchLabel = new JLabel();
         searchLabel.setText("Texto a procurar:");
 
-        searchField = new JTextField("");
+        JTextField searchField = new JTextField("");
         searchButton = new JButton("Procurar");
 
         searchPanel.add(searchLabel, BorderLayout.WEST);
@@ -111,7 +112,7 @@ public class IscTorrentsGui {
         if (option == JOptionPane.OK_OPTION) {
             String address = addressField.getText();
             String port = portField.getText();
-            JOptionPane.showMessageDialog(null, "Conectando a " + address + ":" + port);
+            //TODO(joaoaeafonso): add connection to another node
         }
     }
 
