@@ -1,9 +1,6 @@
 package connection;
 
-import connection.messages.Message;
-import connection.messages.MessageVisitor;
-import connection.messages.NewConnectionRequest;
-import connection.messages.WordSearchMessage;
+import connection.messages.*;
 import connection.models.MessageType;
 import connection.models.PeerInformation;
 
@@ -121,4 +118,10 @@ public class ConnectionManager extends Thread implements MessageVisitor {
     public void visit(WordSearchMessage message) {
         //TODO
     }
+
+    @Override
+    public void visit(FileBlockRequestMessage message) {
+        //TODO
+    }
+
 }

@@ -84,7 +84,7 @@ public class Gui {
     }
 
     private void addEvents() {
-        searchButton.addActionListener(_ -> searchFile());
+        searchButton.addActionListener(e -> searchFile());
 
         downloadButton.addActionListener(_ -> downloadFile());
 
