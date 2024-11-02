@@ -1,8 +1,8 @@
 package connection.models;
 
-import java.util.Objects;
+import java.io.Serializable;
 
-public class PeerInformation {
+public class PeerInformation  implements Serializable {
 
     private final String ipAddress;
     private final String identifier;

@@ -33,7 +33,7 @@ public class Main {
         }
 
         ConnectionManager.createInstance("127.0.0.1", connectionPort);
-        //ConnectionManager.getInstance().startServer();
+        ConnectionManager.getInstance().start();
 
         FileManager.createInstance(dir);
         List<File> ficheiros = FileManager.getInstance().readFiles();

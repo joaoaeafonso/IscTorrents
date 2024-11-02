@@ -3,7 +3,9 @@ package connection.messages;
 import connection.models.MessageType;
 import connection.models.PeerInformation;
 
-public abstract class Message {
+import java.io.Serializable;
+
+public abstract class Message  implements Serializable {
     private final PeerInformation sender;
     private final MessageType type;
 
@@ -26,4 +28,5 @@ public abstract class Message {
     public String toString() {
         return "From: "+this.sender.toString() + " of Type: " + this.type.toString()+".";
     }
+
 }

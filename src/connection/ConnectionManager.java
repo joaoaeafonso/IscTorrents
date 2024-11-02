@@ -7,6 +7,7 @@ import connection.messages.WordSearchMessage;
 import connection.models.MessageType;
 import connection.models.PeerInformation;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -14,9 +15,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
-public class ConnectionManager implements MessageVisitor {
+import static utils.TorrentsUtils.generateIdentifier;
+
+public class ConnectionManager extends Thread implements MessageVisitor {
 
     PeerInformation information;
 
@@ -33,6 +35,11 @@ public class ConnectionManager implements MessageVisitor {
         this.port = port;
     }
 
+    @Override
+    public void run() {
+        startServer();
+    }
+
     public static synchronized  ConnectionManager getInstance() {
         return instance;
     }
@@ -43,7 +50,11 @@ public class ConnectionManager implements MessageVisitor {
         }
     }
 
-    public void startServer() {
+    public synchronized PeerInformation getInformation(){
+        return this.information;
+    }
+
+    private void startServer() {
         try {
             serverSocket = new ServerSocket(this.port);
             System.out.println(this.information.toString());
@@ -55,7 +66,7 @@ public class ConnectionManager implements MessageVisitor {
             }
 
         } catch (IOException ex) {
-            System.err.println("Exception occurred. Cause: "+ex.getCause()+", Message: "+ex.getMessage());
+            System.err.println("Exception occurred startServer. Cause: "+ex.getCause()+", Message: "+ex.getMessage());
         }
     }
 
@@ -69,14 +80,11 @@ public class ConnectionManager implements MessageVisitor {
                 Message message = (Message) in.readObject();
                 receiveMessage(message);
             }
-        } catch (IOException | ClassNotFoundException ex) {
-            System.err.println("Exception occurred. Cause: "+ex.getCause()+", Message: "+ex.getMessage());
-        }
-    }
+        } catch (EOFException _) {
 
-    private String generateIdentifier(String ipAddress, int port) {
-        String data = ipAddress + port;
-        return Integer.toHexString(Objects.hash(data));
+        } catch (IOException | ClassNotFoundException ex) {
+            System.err.println("Exception occurred listenForMessages. Cause: "+ex.getCause()+", Message: "+ex.getMessage());
+        }
     }
 
     public void sendMessage(PeerInformation peerInfo, Message message) {
@@ -86,7 +94,7 @@ public class ConnectionManager implements MessageVisitor {
             out.writeObject(message);
             out.flush();
         } catch (IOException ex) {
-            System.err.println("Exception occurred. Cause: "+ex.getCause()+", Message: "+ex.getMessage());
+            System.err.println("Exception occurred sendMessage. Cause: "+ex.getCause()+", Message: "+ex.getMessage());
         }
     }
 
@@ -97,11 +105,16 @@ public class ConnectionManager implements MessageVisitor {
             return;
         }
 
-        connectedPeers.add(message.getPeerInformation());
+        if( MessageType.CONNECTION_ACKNOWLEDGE == message.getMessageType() ) {
+            System.out.println("Connection established between "+this.information.toString()+" and "+message.getPeerInformation().toString()+".");
+            return;
+        }
 
-        NewConnectionRequest ackMessage = new NewConnectionRequest(this.information, MessageType.CONNECTION_ACKNOWLEDGE);
-        System.out.println("Sending message "+ ackMessage);
-        sendMessage(message.getPeerInformation(), ackMessage);
+        connectedPeers.add(message.getPeerInformation());
+        System.out.println("Peer "+message.getPeerInformation().toString()+" added to Connections list.");
+
+        NewConnectionRequest newRequest = new NewConnectionRequest(this.getInformation(), MessageType.CONNECTION_ACKNOWLEDGE);
+        sendMessage(message.getPeerInformation(), newRequest);
     }
 
     @Override

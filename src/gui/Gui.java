@@ -1,10 +1,17 @@
 package gui;
 
+import connection.ConnectionManager;
+import connection.messages.NewConnectionRequest;
+import connection.models.MessageType;
+import connection.models.PeerInformation;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+
+import static utils.TorrentsUtils.generateIdentifier;
 
 public class Gui {
 
@@ -77,31 +84,16 @@ public class Gui {
     }
 
     private void addEvents() {
-        searchButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                searchFile();
-            }
-        });
+        searchButton.addActionListener(_ -> searchFile());
 
-        downloadButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                downloadFile();
-            }
-        });
+        downloadButton.addActionListener(_ -> downloadFile());
 
-        connectButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                connectToPeerNode();
-            }
-        });
+        connectButton.addActionListener(_ -> connectToPeerNode());
     }
 
     private void connectToPeerNode() {
-        JTextField addressField = new JTextField();
-        JTextField portField = new JTextField();
+        JTextField addressField = new JTextField("127.0.0.1");
+        JTextField portField = new JTextField("8082");
 
         Object[] message = {
                 "Endereço:", addressField,
@@ -112,7 +104,15 @@ public class Gui {
         if (option == JOptionPane.OK_OPTION) {
             String address = addressField.getText();
             String port = portField.getText();
-            //TODO(joaoaeafonso): add connection to another node
+
+            int convertedPort = Integer.parseInt(port);
+
+            ConnectionManager instance = ConnectionManager.getInstance();
+
+            NewConnectionRequest request = new NewConnectionRequest(instance.getInformation(), MessageType.CONNECTION_REQUEST);
+            PeerInformation newConnectInfo = new PeerInformation(address, convertedPort, generateIdentifier(address, convertedPort));
+
+            instance.sendMessage(newConnectInfo, request);
         }
     }
 
