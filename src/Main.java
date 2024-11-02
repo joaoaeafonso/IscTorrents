@@ -1,14 +1,35 @@
+import java.io.File;
 
 public class Main {
-    public static void main(String[] args) {
-        //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-        // to see how IntelliJ IDEA suggests fixing it.
-        System.out.print("Hello and welcome!");
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-            // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-            System.out.println("i = " + i);
+    public static void main(String[] args) {
+
+        if (2 != args.length) {
+            System.err.println("Please pass two arguments to the command. " +
+                    "First is the Connection port and second is your file containing directory.");
+            return;
         }
+
+        int connectionPort;
+        try {
+            connectionPort = Integer.parseInt(args[0]);
+        } catch (NumberFormatException ex) {
+            System.err.println("Port number is not in the correct format. Please use a correct port number.");
+            return;
+        }
+
+        String fileDirectoryName = args[1];
+        File dir = new File(fileDirectoryName);
+
+        if(!dir.exists() || !dir.isDirectory()) {
+            System.err.println("Directory "+fileDirectoryName+" is not a valid directory for " +
+                    "path = "+dir.getAbsolutePath()+". Cannot proceed.");
+            return;
+        }
+
+        IscTorrentsGui application = new IscTorrentsGui("127.0.0.1", connectionPort);
+        application.open();
+
     }
+
 }
