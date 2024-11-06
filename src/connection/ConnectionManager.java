@@ -3,6 +3,9 @@ package connection;
 import connection.messages.*;
 import connection.models.MessageType;
 import connection.models.PeerInformation;
+import files.FileManager;
+import files.models.FileSearchResult;
+import gui.Gui;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -49,6 +52,10 @@ public class ConnectionManager extends Thread implements MessageVisitor {
 
     public synchronized PeerInformation getInformation(){
         return this.information;
+    }
+
+    public synchronized List<PeerInformation> getAllConnectedPeers(){
+        return this.connectedPeers;
     }
 
     private void startServer() {
@@ -103,6 +110,7 @@ public class ConnectionManager extends Thread implements MessageVisitor {
         }
 
         if( MessageType.CONNECTION_ACKNOWLEDGE == message.getMessageType() ) {
+            connectedPeers.add(message.getPeerInformation());
             System.out.println("Connection established between "+this.information.toString()+" and "+message.getPeerInformation().toString()+".");
             return;
         }
@@ -116,7 +124,15 @@ public class ConnectionManager extends Thread implements MessageVisitor {
 
     @Override
     public void visit(WordSearchMessage message) {
-        //TODO
+        if( MessageType.WORD_SEARCH_MESSAGE_REQUEST == message.getMessageType() ) {
+            List<FileSearchResult> allRelevantFiles = FileManager.getInstance().getAllRelevantFiles(message.getKeyword(), message);
+
+            WordSearchMessage answer = new WordSearchMessage(this.information, MessageType.WORD_SEARCH_MESSAGE_RESPONSE, message.getKeyword(), allRelevantFiles);
+            ConnectionManager.getInstance().sendMessage(message.getPeerInformation(), answer);
+            return;
+        }
+
+        Gui.getInstance().updateResultList(message.getResultList());
     }
 
     @Override

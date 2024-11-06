@@ -33,10 +33,13 @@ public class FileManager {
         }
     }
 
-    public List<FileSearchResult> getAllRelevantFiles(String keyword, WordSearchMessage message){
+    public synchronized List<FileSearchResult> getAllRelevantFiles(String keyword, WordSearchMessage message){
         List<FileSearchResult> resultList = new ArrayList<>();
-
         List<File> allFiles = readFiles();
+
+        if(keyword.isEmpty()) {
+            return resultList;
+        }
 
         for(File file: allFiles) {
             if( file.getName().toLowerCase().contains(keyword) ) {
@@ -48,8 +51,11 @@ public class FileManager {
                         file.getName(),
                         message.getPeerInformation()
                 ));
-
             }
+        }
+
+        if( resultList.isEmpty() ) {
+            return null;
         }
 
         return resultList;
@@ -81,7 +87,7 @@ public class FileManager {
         }
     }
 
-    public synchronized List<File> readFiles() {
+    private synchronized List<File> readFiles() {
         List<File> musicFileList = new ArrayList<>();
 
         File[] files = actuatingDirectory.listFiles((_, nome) ->

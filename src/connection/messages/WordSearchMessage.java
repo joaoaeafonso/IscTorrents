@@ -9,7 +9,7 @@ import java.util.List;
 public class WordSearchMessage extends Message {
 
     private final String keyword;
-    private final List<FileSearchResult> resultList;
+    private List<FileSearchResult> resultList;
 
     public WordSearchMessage(
             PeerInformation peerInformation,
@@ -28,6 +28,10 @@ public class WordSearchMessage extends Message {
 
     public List<FileSearchResult> getResultList(){
         return this.resultList;
+    }
+
+    public void setResultList(List<FileSearchResult> resultList){
+        this.resultList = resultList;
     }
 
     @Override

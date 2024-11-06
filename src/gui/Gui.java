@@ -2,14 +2,17 @@ package gui;
 
 import connection.ConnectionManager;
 import connection.messages.NewConnectionRequest;
+import connection.messages.WordSearchMessage;
 import connection.models.MessageType;
 import connection.models.PeerInformation;
+import files.models.FileSearchResult;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static utils.TorrentsUtils.generateIdentifier;
 
@@ -21,21 +24,61 @@ public class Gui {
     private JButton downloadButton;
     private JButton connectButton;
 
+    private JTextField searchField;
+
     private JList<String> resultList;
     private DefaultListModel<String> listModel;
+    private Map<String, Integer> displayedResultsMap;
 
-    public Gui(String address, int port, File fileDir) {
+    private static Gui instance;
+
+    private Gui(String address, int port, File fileDir) {
         frame = new JFrame("Port Node Address[address="+address+", port="+port+"]");
         frame.setLayout(new BorderLayout());
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
+        this.displayedResultsMap = new HashMap<>();
+
         addContent();
+    }
+
+    public static synchronized Gui getInstance() {
+        return instance;
+    }
+
+    public static synchronized void createInstance(String address, int port, File fileDir) {
+        if( null == instance ) {
+            instance = new Gui(address, port, fileDir);
+        }
     }
 
     public void open() {
         Dimension dimension = Toolkit.getDefaultToolkit().getScreenSize();
         frame.setSize(dimension.width / 2, dimension.height / 2);
         frame.setVisible(true);
+    }
+
+    public synchronized void updateResultList(List<FileSearchResult> fileSearchResults) {
+        if( null == fileSearchResults ) {
+            return;
+        }
+
+        listModel.clear();
+        displayedResultsMap.clear();
+
+        for(FileSearchResult file: fileSearchResults) {
+            if( displayedResultsMap.containsKey(file.getFileName()) ) {
+                displayedResultsMap.compute(file.getFileName(), (_, numPeersWithFile) -> numPeersWithFile + 1);
+                continue;
+            }
+
+            displayedResultsMap.put(file.getFileName(), 1);
+        }
+
+        for(Map.Entry<String, Integer> entry : displayedResultsMap.entrySet()){
+            String resultEntry = entry.getKey() + " <"+entry.getValue().toString()+">";
+            this.listModel.addElement(resultEntry);
+        }
     }
 
     private void addContent() {
@@ -73,7 +116,7 @@ public class Gui {
         JLabel searchLabel = new JLabel();
         searchLabel.setText("Texto a procurar:");
 
-        JTextField searchField = new JTextField("");
+        searchField = new JTextField("");
         searchButton = new JButton("Procurar");
 
         searchPanel.add(searchLabel, BorderLayout.WEST);
@@ -85,9 +128,7 @@ public class Gui {
 
     private void addEvents() {
         searchButton.addActionListener(e -> searchFile());
-
         downloadButton.addActionListener(_ -> downloadFile());
-
         connectButton.addActionListener(_ -> connectToPeerNode());
     }
 
@@ -117,7 +158,7 @@ public class Gui {
     }
 
     private void downloadFile() {
-        //TODO(joaoaeafonso): This is to me removed. For testing purposes only
+        //TODO(joaoaeafonso): This is to be removed. For testing purposes only
         String selectedItem = resultList.getSelectedValue();
         if (selectedItem != null) {
             JOptionPane.showMessageDialog(null, "Descarregando: " + selectedItem);
@@ -127,11 +168,14 @@ public class Gui {
     }
 
     private void searchFile() {
-        //TODO(joaoaeafonso): This is to me removed. For testing purposes only
-        listModel.clear();
-        listModel.addElement("Resultado 1");
-        listModel.addElement("Resultado 2");
-        listModel.addElement("Resultado 3");
+        String searchText = searchField.getText();
+
+        WordSearchMessage message = new WordSearchMessage(ConnectionManager.getInstance().getInformation(), MessageType.WORD_SEARCH_MESSAGE_REQUEST, searchText, null);
+        List<PeerInformation> connectedPeers = ConnectionManager.getInstance().getAllConnectedPeers();
+
+        for(PeerInformation peer: connectedPeers) {
+            ConnectionManager.getInstance().sendMessage(peer, message);
+        }
     }
 
 }
