@@ -54,10 +54,6 @@ public class FileManager {
             }
         }
 
-        if( resultList.isEmpty() ) {
-            return null;
-        }
-
         return resultList;
     }
 
@@ -65,7 +61,7 @@ public class FileManager {
         try {
             FileInputStream fis = new FileInputStream(file);
             byte[] byteArray = new byte[1024];
-            int bytesRead = -1;
+            int bytesRead;
 
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
 

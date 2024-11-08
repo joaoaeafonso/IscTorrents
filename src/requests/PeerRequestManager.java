@@ -18,6 +18,8 @@ public class PeerRequestManager {
     private static PeerRequestManager instance;
     private final List<FileSearchResult> responses = new CopyOnWriteArrayList<>();
 
+    private CountDownLatch latch;
+
     private PeerRequestManager() { }
 
     public static synchronized void createInstance() {
@@ -68,35 +70,30 @@ public class PeerRequestManager {
         ConnectionManager.getInstance().sendMessage(message.getPeerInformation(), answer);
     }
 
-    public void peerFileWordSearchRequest(List<PeerInformation> peers, String keyword) {
-        CountDownLatch latch = new CountDownLatch(peers.size());
+    public synchronized void peerFileWordSearchRequest(List<PeerInformation> peers, String keyword) {
+        this.latch = new CountDownLatch(peers.size());
         ExecutorService executor = Executors.newFixedThreadPool(peers.size());
 
         for(PeerInformation peer: peers) {
             executor.submit(() -> {
-                try {
-                    WordSearchMessage request = new WordSearchMessage(
-                            ConnectionManager.getInstance().getInformation(),
-                            keyword,
-                            null
-                    );
-                    ConnectionManager.getInstance().sendMessage(peer, request);
-
-                } finally {
-                    latch.countDown();
-                }
+                WordSearchMessage request = new WordSearchMessage(
+                        ConnectionManager.getInstance().getInformation(),
+                        keyword,
+                        null
+                );
+                ConnectionManager.getInstance().sendMessage(peer, request);
             });
         }
 
         try {
-            boolean allResponsesReceived = latch.await(30, TimeUnit.SECONDS);
-
-            if(allResponsesReceived){
-                Gui.getInstance().updateResultList(responses);
+            if(this.latch.await(30, TimeUnit.SECONDS)){
+                System.out.println("Received all responses.");
             } else {
                 System.out.println("Did not receive all the responses. Timeout occurred.");
-                Gui.getInstance().updateResultList(responses);
             }
+
+            Gui.getInstance().updateResultList(responses);
+            responses.clear();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
@@ -106,5 +103,6 @@ public class PeerRequestManager {
 
     public void addResponse(List<FileSearchResult> results) {
         responses.addAll(results);
+        this.latch.countDown();
     }
 }

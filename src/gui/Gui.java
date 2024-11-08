@@ -30,7 +30,7 @@ public class Gui {
 
     private static Gui instance;
 
-    private Gui(String address, int port, File fileDir) {
+    private Gui(String address, int port) {
         frame = new JFrame("Port Node Address[address="+address+", port="+port+"]");
         frame.setLayout(new BorderLayout());
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -44,9 +44,9 @@ public class Gui {
         return instance;
     }
 
-    public static synchronized void createInstance(String address, int port, File fileDir) {
+    public static synchronized void createInstance(String address, int port) {
         if( null == instance ) {
-            instance = new Gui(address, port, fileDir);
+            instance = new Gui(address, port);
         }
     }
 
@@ -57,7 +57,9 @@ public class Gui {
     }
 
     public synchronized void updateResultList(List<FileSearchResult> fileSearchResults) {
-        if( null == fileSearchResults ) {
+        if( null == fileSearchResults || fileSearchResults.isEmpty() ) {
+            listModel.clear();
+            displayedResultsMap.clear();
             return;
         }
 
@@ -65,12 +67,7 @@ public class Gui {
         displayedResultsMap.clear();
 
         for(FileSearchResult file: fileSearchResults) {
-            if( displayedResultsMap.containsKey(file.getFileName()) ) {
-                displayedResultsMap.compute(file.getFileName(), (_, numPeersWithFile) -> numPeersWithFile + 1);
-                continue;
-            }
-
-            displayedResultsMap.put(file.getFileName(), 1);
+            displayedResultsMap.put(file.getFileName(), displayedResultsMap.getOrDefault(file.getFileName(), 0) + 1);
         }
 
         for(Map.Entry<String, Integer> entry : displayedResultsMap.entrySet()){
@@ -125,7 +122,7 @@ public class Gui {
     }
 
     private void addEvents() {
-        searchButton.addActionListener(e -> searchFile());
+        searchButton.addActionListener(_ -> searchFile());
         downloadButton.addActionListener(_ -> downloadFile());
         connectButton.addActionListener(_ -> connectToPeerNode());
     }

@@ -38,7 +38,7 @@ public class Main {
         FileManager.createInstance(dir);
         PeerRequestManager.createInstance();
 
-        Gui.createInstance("127.0.0.1", connectionPort, dir);
+        Gui.createInstance("127.0.0.1", connectionPort);
         Gui.getInstance().open();
     }
 
