@@ -6,4 +6,5 @@ public interface MessageVisitor {
     void visit(WordSearchMessage message);
     void visit(WordSearchMessageResponse message);
     void visit(FileBlockRequestMessage message);
+    void visit(FileBlockRequestMessageResponse message);
 }

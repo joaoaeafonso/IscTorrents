@@ -1,11 +1,13 @@
 package requests;
 
+import common.Pair;
 import connection.ConnectionManager;
 import connection.messages.NewConnectionRequest;
 import connection.messages.NewConnectionResponse;
 import connection.messages.WordSearchMessage;
 import connection.messages.WordSearchMessageResponse;
 import connection.models.PeerInformation;
+import downloads.DownloadTaskManager;
 import files.FileManager;
 import files.models.FileSearchResult;
 import gui.Gui;
@@ -30,6 +32,10 @@ public class PeerRequestManager {
 
     public static synchronized PeerRequestManager getInstance(){
         return instance;
+    }
+
+    public void peerDownloadRequest(Pair<FileSearchResult, List<PeerInformation>> downloadInformation) {
+        DownloadTaskManager.getInstance().startDownloadRequest(downloadInformation);
     }
 
     public void peerConnectionRequest(PeerInformation peer) {

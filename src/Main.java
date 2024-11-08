@@ -1,4 +1,5 @@
 import connection.ConnectionManager;
+import downloads.DownloadTaskManager;
 import files.FileManager;
 import gui.Gui;
 import requests.PeerRequestManager;
@@ -37,6 +38,7 @@ public class Main {
 
         FileManager.createInstance(dir);
         PeerRequestManager.createInstance();
+        DownloadTaskManager.createInstance();
 
         Gui.createInstance("127.0.0.1", connectionPort);
         Gui.getInstance().open();

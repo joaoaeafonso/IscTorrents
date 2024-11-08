@@ -128,4 +128,9 @@ public class ConnectionManager extends Thread implements MessageVisitor {
         //TODO
     }
 
+    @Override
+    public void visit(FileBlockRequestMessageResponse message) {
+        //TODO
+    }
+
 }

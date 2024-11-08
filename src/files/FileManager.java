@@ -14,8 +14,6 @@ import java.util.List;
 
 public class FileManager {
 
-    public static int BLOCK_SIZE = 10240;
-
     private static FileManager instance;
     private final File actuatingDirectory;
 

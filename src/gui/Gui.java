@@ -1,5 +1,6 @@
 package gui;
 
+import common.Pair;
 import connection.ConnectionManager;
 import connection.models.PeerInformation;
 import files.models.FileSearchResult;
@@ -8,9 +9,8 @@ import requests.PeerRequestManager;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 import static utils.TorrentsUtils.generateIdentifier;
 
@@ -27,6 +27,7 @@ public class Gui {
     private JList<String> resultList;
     private DefaultListModel<String> listModel;
     private final Map<String, Integer> displayedResultsMap;
+    private List<FileSearchResult> displayedFilesInformation;
 
     private static Gui instance;
 
@@ -36,6 +37,7 @@ public class Gui {
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         this.displayedResultsMap = new HashMap<>();
+        this.displayedFilesInformation = new ArrayList<>();
 
         addContent();
     }
@@ -54,26 +56,6 @@ public class Gui {
         Dimension dimension = Toolkit.getDefaultToolkit().getScreenSize();
         frame.setSize(dimension.width / 2, dimension.height / 2);
         frame.setVisible(true);
-    }
-
-    public synchronized void updateResultList(List<FileSearchResult> fileSearchResults) {
-        if( null == fileSearchResults || fileSearchResults.isEmpty() ) {
-            listModel.clear();
-            displayedResultsMap.clear();
-            return;
-        }
-
-        listModel.clear();
-        displayedResultsMap.clear();
-
-        for(FileSearchResult file: fileSearchResults) {
-            displayedResultsMap.put(file.getFileName(), displayedResultsMap.getOrDefault(file.getFileName(), 0) + 1);
-        }
-
-        for(Map.Entry<String, Integer> entry : displayedResultsMap.entrySet()){
-            String resultEntry = entry.getKey() + " <"+entry.getValue().toString()+">";
-            this.listModel.addElement(resultEntry);
-        }
     }
 
     private void addContent() {
@@ -149,18 +131,54 @@ public class Gui {
     }
 
     private void downloadFile() {
-        //TODO(joaoaeafonso): This is to be removed. For testing purposes only
         String selectedItem = resultList.getSelectedValue();
-        if (selectedItem != null) {
-            JOptionPane.showMessageDialog(null, "Descarregando: " + selectedItem);
-        } else {
-            JOptionPane.showMessageDialog(null, "Por favor, selecione um item da lista.");
+        PeerRequestManager.getInstance().peerDownloadRequest(getFileDownloadInformation(selectedItem));
+    }
+
+    private Pair<FileSearchResult, List<PeerInformation>> getFileDownloadInformation(String fileName) {
+        int index = fileName.indexOf(" ");
+        if (index != -1) {
+            fileName = fileName.substring(0, index);
         }
+
+        FileSearchResult downloadInformation = null;
+        List<PeerInformation> fileHolders = new ArrayList<>();
+        for(FileSearchResult searchResult: displayedFilesInformation) {
+            if(Objects.equals(searchResult.getFileName(), fileName)) {
+                downloadInformation = searchResult;
+                fileHolders.add(searchResult.getPeerInformation());
+            }
+        }
+
+        return new Pair<>(downloadInformation, fileHolders);
     }
 
     private void searchFile() {
         String searchText = searchField.getText();
         PeerRequestManager.getInstance().peerFileWordSearchRequest(ConnectionManager.getInstance().getAllConnectedPeers(), searchText);
+    }
+
+    public synchronized void updateResultList(List<FileSearchResult> fileSearchResults) {
+        if( null == fileSearchResults || fileSearchResults.isEmpty() ) {
+            listModel.clear();
+            displayedResultsMap.clear();
+            return;
+        }
+
+        listModel.clear();
+        displayedResultsMap.clear();
+        displayedFilesInformation.clear();
+
+        for(FileSearchResult file: fileSearchResults) {
+            displayedResultsMap.put(file.getFileName(), displayedResultsMap.getOrDefault(file.getFileName(), 0) + 1);
+        }
+
+        for(Map.Entry<String, Integer> entry : displayedResultsMap.entrySet()){
+            String resultEntry = entry.getKey() + " <"+entry.getValue().toString()+">";
+            this.listModel.addElement(resultEntry);
+        }
+
+        displayedFilesInformation = new ArrayList<>(fileSearchResults);
     }
 
 }
