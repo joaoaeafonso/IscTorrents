@@ -1,11 +1,8 @@
 package connection;
 
 import connection.messages.*;
-import connection.models.MessageType;
 import connection.models.PeerInformation;
-import files.FileManager;
-import files.models.FileSearchResult;
-import gui.Gui;
+import requests.PeerRequestManager;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -58,6 +55,10 @@ public class ConnectionManager extends Thread implements MessageVisitor {
         return this.connectedPeers;
     }
 
+    public synchronized void addPeerToConnectedPeerList(PeerInformation peer){
+        this.connectedPeers.add(peer);
+    }
+
     private void startServer() {
         try {
             serverSocket = new ServerSocket(this.port);
@@ -104,35 +105,22 @@ public class ConnectionManager extends Thread implements MessageVisitor {
 
     @Override
     public void visit(NewConnectionRequest message) {
-        if(connectedPeers.contains(message.getPeerInformation())) {
-            System.out.println(message.getPeerInformation()+" is already present in the connections.");
-            return;
-        }
+        PeerRequestManager.getInstance().peerConnectionRequestResponse(message.getPeerInformation());
+    }
 
-        if( MessageType.CONNECTION_ACKNOWLEDGE == message.getMessageType() ) {
-            connectedPeers.add(message.getPeerInformation());
-            System.out.println("Connection established between "+this.information.toString()+" and "+message.getPeerInformation().toString()+".");
-            return;
-        }
-
-        connectedPeers.add(message.getPeerInformation());
-        System.out.println("Peer "+message.getPeerInformation().toString()+" added to Connections list.");
-
-        NewConnectionRequest newRequest = new NewConnectionRequest(this.getInformation(), MessageType.CONNECTION_ACKNOWLEDGE);
-        sendMessage(message.getPeerInformation(), newRequest);
+    @Override
+    public void visit(NewConnectionResponse message) {
+        PeerRequestManager.getInstance().peerConnectionResponseAcknowledge(message.getPeerInformation());
     }
 
     @Override
     public void visit(WordSearchMessage message) {
-        if( MessageType.WORD_SEARCH_MESSAGE_REQUEST == message.getMessageType() ) {
-            List<FileSearchResult> allRelevantFiles = FileManager.getInstance().getAllRelevantFiles(message.getKeyword(), message);
+        PeerRequestManager.getInstance().peerFileSearchRequest(message);
+    }
 
-            WordSearchMessage answer = new WordSearchMessage(this.information, MessageType.WORD_SEARCH_MESSAGE_RESPONSE, message.getKeyword(), allRelevantFiles);
-            ConnectionManager.getInstance().sendMessage(message.getPeerInformation(), answer);
-            return;
-        }
-
-        Gui.getInstance().updateResultList(message.getResultList());
+    @Override
+    public void visit(WordSearchMessageResponse message) {
+        PeerRequestManager.getInstance().addResponse(message.getResultList());
     }
 
     @Override

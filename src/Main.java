@@ -1,6 +1,7 @@
 import connection.ConnectionManager;
 import files.FileManager;
 import gui.Gui;
+import requests.PeerRequestManager;
 
 import java.io.File;
 
@@ -35,6 +36,7 @@ public class Main {
         ConnectionManager.getInstance().start();
 
         FileManager.createInstance(dir);
+        PeerRequestManager.createInstance();
 
         Gui.createInstance("127.0.0.1", connectionPort, dir);
         Gui.getInstance().open();

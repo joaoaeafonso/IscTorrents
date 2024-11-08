@@ -1,6 +1,5 @@
 package connection.messages;
 
-import connection.models.MessageType;
 import connection.models.PeerInformation;
 
 public class FileBlockRequestMessage extends Message {
@@ -10,8 +9,8 @@ public class FileBlockRequestMessage extends Message {
     private long length;
 
 
-    public FileBlockRequestMessage(PeerInformation sender, MessageType type, String hash, long offset, long length) {
-        super(sender, type);
+    public FileBlockRequestMessage(PeerInformation sender, String hash, long offset, long length) {
+        super(sender);
         this.fileHash = hash;
         this.offset = offset;
         this.length = length;

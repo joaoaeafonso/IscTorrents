@@ -2,9 +2,9 @@ package connection.messages;
 
 import connection.models.PeerInformation;
 
-public class NewConnectionRequest extends Message {
+public class NewConnectionResponse extends Message {
 
-    public NewConnectionRequest(PeerInformation peerInformation){
+    public NewConnectionResponse(PeerInformation peerInformation){
         super(peerInformation);
     }
 

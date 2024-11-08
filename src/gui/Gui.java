@@ -1,11 +1,9 @@
 package gui;
 
 import connection.ConnectionManager;
-import connection.messages.NewConnectionRequest;
-import connection.messages.WordSearchMessage;
-import connection.models.MessageType;
 import connection.models.PeerInformation;
 import files.models.FileSearchResult;
+import requests.PeerRequestManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -28,7 +26,7 @@ public class Gui {
 
     private JList<String> resultList;
     private DefaultListModel<String> listModel;
-    private Map<String, Integer> displayedResultsMap;
+    private final Map<String, Integer> displayedResultsMap;
 
     private static Gui instance;
 
@@ -148,12 +146,8 @@ public class Gui {
 
             int convertedPort = Integer.parseInt(port);
 
-            ConnectionManager instance = ConnectionManager.getInstance();
-
-            NewConnectionRequest request = new NewConnectionRequest(instance.getInformation(), MessageType.CONNECTION_REQUEST);
             PeerInformation newConnectInfo = new PeerInformation(address, convertedPort, generateIdentifier(address, convertedPort));
-
-            instance.sendMessage(newConnectInfo, request);
+            PeerRequestManager.getInstance().peerConnectionRequest(newConnectInfo);
         }
     }
 
@@ -169,13 +163,7 @@ public class Gui {
 
     private void searchFile() {
         String searchText = searchField.getText();
-
-        WordSearchMessage message = new WordSearchMessage(ConnectionManager.getInstance().getInformation(), MessageType.WORD_SEARCH_MESSAGE_REQUEST, searchText, null);
-        List<PeerInformation> connectedPeers = ConnectionManager.getInstance().getAllConnectedPeers();
-
-        for(PeerInformation peer: connectedPeers) {
-            ConnectionManager.getInstance().sendMessage(peer, message);
-        }
+        PeerRequestManager.getInstance().peerFileWordSearchRequest(ConnectionManager.getInstance().getAllConnectedPeers(), searchText);
     }
 
 }
