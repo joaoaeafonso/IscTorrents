@@ -67,7 +67,7 @@ public class DownloadTaskManager {
 
                 Instant end = Instant.now();
                 Duration timeElapsed = Duration.between(start, end);
-                System.out.println("TEMPO DO DOWNLOAD -> "+timeElapsed);
+                System.out.println("TEMPO DO DOWNLOAD -> "+timeElapsed.getSeconds());
             } else {
                 System.out.println("Did not receive all the responses. Timeout occurred. Cannot save file.");
             }

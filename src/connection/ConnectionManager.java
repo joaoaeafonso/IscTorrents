@@ -27,8 +27,8 @@ public class ConnectionManager extends Thread implements MessageVisitor {
     private ServerSocket serverSocket;
     private final List<PeerInformation> connectedPeers = new ArrayList<>();
 
-    private BlockingQueue<Pair<PeerInformation, Message>> messageQueue;
-    private ScheduledExecutorService scheduler;
+    private final BlockingQueue<Pair<PeerInformation, Message>> messageQueue;
+    private final ScheduledExecutorService scheduler;
 
     private static ConnectionManager instance;
 
@@ -112,7 +112,7 @@ public class ConnectionManager extends Thread implements MessageVisitor {
             } catch (Exception ex) {
                 System.err.println("Exception occurred listenForMessages. Cause: "+ex.getCause()+", Message: "+ex.getMessage());
             }
-        },  0, 100, TimeUnit.MILLISECONDS );
+        },  0, 10, TimeUnit.MILLISECONDS );
     }
 
     public void queueMessage(PeerInformation peerInformation, Message message) {
