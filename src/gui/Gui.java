@@ -2,6 +2,7 @@ package gui;
 
 import common.Pair;
 import connection.ConnectionManager;
+import connection.messages.FileBlockRequestMessage;
 import connection.models.PeerInformation;
 import files.models.FileSearchResult;
 import requests.PeerRequestManager;
@@ -135,6 +136,23 @@ public class Gui {
         if(selectedItem != null) {
             PeerRequestManager.getInstance().peerDownloadRequest(getFileDownloadInformation(selectedItem));
         }
+    }
+
+    public void handleDownloadFinished(HashMap<PeerInformation, List<FileBlockRequestMessage>> downloadProviders, long downloadDurationSec) {
+        StringBuilder messageBuilder = new StringBuilder();
+        messageBuilder.append("Download Successfully finished\n\n");
+
+        messageBuilder.append("Messages received per peer:\n");
+        for(Map.Entry<PeerInformation, List<FileBlockRequestMessage>> entry: downloadProviders.entrySet()) {
+            messageBuilder.append("Peer [")
+                    .append(entry.getKey())
+                    .append("], Number of File Blocks [")
+                    .append(entry.getValue().size())
+                    .append("] \n");
+        }
+
+        messageBuilder.append("\nTotal download time: ").append(downloadDurationSec).append(" seconds");
+        JOptionPane.showMessageDialog(null, messageBuilder.toString(), "Download Successfully finished", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private Pair<FileSearchResult, List<PeerInformation>> getFileDownloadInformation(String fileName) {

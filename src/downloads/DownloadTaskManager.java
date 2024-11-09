@@ -5,7 +5,9 @@ import connection.ConnectionManager;
 import connection.messages.FileBlockRequestMessage;
 import connection.messages.FileBlockRequestMessageResponse;
 import connection.models.PeerInformation;
+import files.FileManager;
 import files.models.FileSearchResult;
+import gui.Gui;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -24,6 +26,7 @@ public class DownloadTaskManager {
 
     private CountDownLatch latch;
     private final List<FileBlockRequestMessageResponse> responses = new CopyOnWriteArrayList<>();
+    private List<Pair<PeerInformation, Integer>> downloadMetadata;
 
     private DownloadTaskManager() { }
 
@@ -42,12 +45,13 @@ public class DownloadTaskManager {
         int totalFileBlockMessages = fileBlockRequestMessages.size();
         HashMap<PeerInformation, List<FileBlockRequestMessage>> downloadInfo =
                 handleFileBlockDistributionPerPeer(fileBlockRequestMessages, downloadInformation.getSecond());
-        sendFileBlockMessage(downloadInfo, totalFileBlockMessages);
+        sendFileBlockMessage(downloadInfo, totalFileBlockMessages, downloadInformation.getFirst().getFileName());
     }
 
     private synchronized void sendFileBlockMessage(
             HashMap<PeerInformation, List<FileBlockRequestMessage>> requestInformation,
-            int totalFileBlocks
+            int totalFileBlocks,
+            String fileName
     ){
         this.latch = new CountDownLatch(totalFileBlocks);
         ExecutorService executor = Executors.newFixedThreadPool(MAX_NUM_THREADS);
@@ -63,11 +67,11 @@ public class DownloadTaskManager {
             if(this.latch.await(90, TimeUnit.SECONDS)) {
                 System.out.println("Received all responses.");
 
-                //TODO(joaoaeafonso): add mechanism to put file back together and store it in memory
+                FileManager.getInstance().assembleReceivedFile(responses, fileName);
 
                 Instant end = Instant.now();
                 Duration timeElapsed = Duration.between(start, end);
-                System.out.println("TEMPO DO DOWNLOAD -> "+timeElapsed.getSeconds());
+                Gui.getInstance().handleDownloadFinished(requestInformation, timeElapsed.getSeconds());
             } else {
                 System.out.println("Did not receive all the responses. Timeout occurred. Cannot save file.");
             }

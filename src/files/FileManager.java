@@ -3,11 +3,13 @@ package files;
 import common.Pair;
 import connection.ConnectionManager;
 import connection.messages.FileBlockRequestMessage;
+import connection.messages.FileBlockRequestMessageResponse;
 import connection.messages.WordSearchMessage;
 import files.models.FileSearchResult;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -32,6 +34,23 @@ public class FileManager {
     public static synchronized  void createInstance(File dir){
         if( null == instance ){
             instance = new FileManager(dir);
+        }
+    }
+
+    public void assembleReceivedFile(List<FileBlockRequestMessageResponse> responses, String fileName) {
+        List<FileBlockRequestMessageResponse> copiedResponses = new ArrayList<>(responses);
+
+        copiedResponses.sort(Comparator.comparingLong(FileBlockRequestMessageResponse::getOffset));
+        File outputFile = new File(actuatingDirectory, fileName);
+
+        try (FileOutputStream outputStream = new FileOutputStream(outputFile)) {
+            for (FileBlockRequestMessageResponse response : responses) {
+                byte[] data = response.getData();
+                outputStream.write(data);
+            }
+
+        } catch (IOException ex) {
+            System.err.println("Exception occurred startServer. Cause: "+ex.getCause()+", Message: "+ex.getMessage());
         }
     }
 
