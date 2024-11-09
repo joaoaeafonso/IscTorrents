@@ -55,12 +55,12 @@ public class FileManager {
     }
 
     public synchronized byte[] getFileBlock(FileBlockRequestMessage message) {
-        String fileHash = message.getFileHash();
+        String fileName = message.getFileName();
         long offset = message.getOffset();
         int length = (int) message.getLength();
         byte[] data = new byte[length];
 
-        File file = this.filesInDirMap.get(fileHash);
+        File file = this.filesInDirMap.get(fileName);
 
         try(FileInputStream fileInputStream = new FileInputStream(file)) {
 
@@ -166,8 +166,8 @@ public class FileManager {
         Map<String, File> pairMap = new HashMap<>();
 
         for(File file: allFiles){
-            String hash = getFileHash(file);
-            pairMap.put(hash, file);
+            String name = file.getName();
+            pairMap.put(name, file);
         }
 
         this.filesInDirMap = pairMap;

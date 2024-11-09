@@ -131,7 +131,8 @@ public class DownloadTaskManager {
                     ConnectionManager.getInstance().getInformation(),
                     fileSearchInformation.getHash(),
                     offset,
-                    length);
+                    length,
+                    fileSearchInformation.getFileName());
 
             blockRequestList.add(blockRequestMessage);
             offset += length;
