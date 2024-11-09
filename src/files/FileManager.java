@@ -1,5 +1,8 @@
 package files;
 
+import common.Pair;
+import connection.ConnectionManager;
+import connection.messages.FileBlockRequestMessage;
 import connection.messages.WordSearchMessage;
 import files.models.FileSearchResult;
 
@@ -8,17 +11,18 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class FileManager {
 
     private static FileManager instance;
     private final File actuatingDirectory;
 
+    private Map<String, File> filesInDirMap;
+
     private FileManager(File actuatingDirectory) {
         this.actuatingDirectory = actuatingDirectory;
+        getAllFilesInActuatingDir();
     }
 
     public static synchronized  FileManager getInstance() {
@@ -29,6 +33,45 @@ public class FileManager {
         if( null == instance ){
             instance = new FileManager(dir);
         }
+    }
+
+    public synchronized byte[] getFileBlock(FileBlockRequestMessage message) {
+        String fileHash = message.getFileHash();
+        long offset = message.getOffset();
+        int length = (int) message.getLength();
+        byte[] data = new byte[length];
+
+        File file = this.filesInDirMap.get(fileHash);
+
+        try(FileInputStream fileInputStream = new FileInputStream(file)) {
+
+            if (fileInputStream.skip(offset) != offset) {
+                System.out.println("Error skipping until offset byte. Cannot proceed.");
+                return null;
+            }
+
+            int bytesRead = 0;
+            while (bytesRead < length) {
+                int result = fileInputStream.read(data, bytesRead, length - bytesRead);
+                if (result == -1) {
+                    break;
+                }
+                bytesRead += result;
+            }
+
+            if (bytesRead < length) {
+                byte[] adjustedData = new byte[bytesRead];
+                System.arraycopy(data, 0, adjustedData, 0, bytesRead);
+                data = adjustedData;
+            }
+
+            return data;
+
+        } catch (IOException ex) {
+            System.err.println("Exception occurred sendMessage. Cause: "+ex.getCause()+", Message: "+ex.getMessage());
+        }
+
+        return null;
     }
 
     public synchronized List<FileSearchResult> getAllRelevantFiles(String keyword, WordSearchMessage message){
@@ -47,7 +90,7 @@ public class FileManager {
                         getFileHash(file),
                         file.length(),
                         file.getName(),
-                        message.getPeerInformation()
+                        ConnectionManager.getInstance().getInformation()
                 ));
             }
         }
@@ -99,5 +142,16 @@ public class FileManager {
         return musicFileList;
     }
 
+    private synchronized void getAllFilesInActuatingDir() {
+        List<File> allFiles = readFiles();
+        Map<String, File> pairMap = new HashMap<>();
+
+        for(File file: allFiles){
+            String hash = getFileHash(file);
+            pairMap.put(hash, file);
+        }
+
+        this.filesInDirMap = pairMap;
+    }
 
 }

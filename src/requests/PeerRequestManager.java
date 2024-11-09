@@ -2,10 +2,7 @@ package requests;
 
 import common.Pair;
 import connection.ConnectionManager;
-import connection.messages.NewConnectionRequest;
-import connection.messages.NewConnectionResponse;
-import connection.messages.WordSearchMessage;
-import connection.messages.WordSearchMessageResponse;
+import connection.messages.*;
 import connection.models.PeerInformation;
 import downloads.DownloadTaskManager;
 import files.FileManager;
@@ -34,6 +31,23 @@ public class PeerRequestManager {
         return instance;
     }
 
+    public void peerFileBlockRequest(FileBlockRequestMessage message) {
+        byte[] fileBlock = FileManager.getInstance().getFileBlock(message);
+
+        FileBlockRequestMessageResponse response = new FileBlockRequestMessageResponse(
+                ConnectionManager.getInstance().getInformation(),
+                message.getFileHash(),
+                message.getOffset(),
+                fileBlock
+        );
+
+        ConnectionManager.getInstance().queueMessage(message.getPeerInformation(), response);
+    }
+
+    public void peerFileBlockResponse(FileBlockRequestMessageResponse message){
+        DownloadTaskManager.getInstance().addResponse(message);
+    }
+
     public void peerDownloadRequest(Pair<FileSearchResult, List<PeerInformation>> downloadInformation) {
         DownloadTaskManager.getInstance().startDownloadRequest(downloadInformation);
     }
@@ -41,7 +55,7 @@ public class PeerRequestManager {
     public void peerConnectionRequest(PeerInformation peer) {
         ConnectionManager instance = ConnectionManager.getInstance();
         NewConnectionRequest request = new NewConnectionRequest(instance.getInformation());
-        instance.sendMessage(peer, request);
+        instance.queueMessage(peer, request);
     }
 
     public void peerConnectionRequestResponse(PeerInformation peer) {
@@ -55,7 +69,7 @@ public class PeerRequestManager {
         System.out.println("Peer "+peer+" added to Connections list.");
 
         NewConnectionResponse newRequest = new NewConnectionResponse(instance.getInformation());
-        instance.sendMessage(peer, newRequest);
+        instance.queueMessage(peer, newRequest);
     }
 
     public void peerConnectionResponseAcknowledge(PeerInformation peer) {
@@ -73,7 +87,7 @@ public class PeerRequestManager {
                 allRelevantFiles
         );
 
-        ConnectionManager.getInstance().sendMessage(message.getPeerInformation(), answer);
+        ConnectionManager.getInstance().queueMessage(message.getPeerInformation(), answer);
     }
 
     public synchronized void peerFileWordSearchRequest(List<PeerInformation> peers, String keyword) {
@@ -87,7 +101,7 @@ public class PeerRequestManager {
                         keyword,
                         null
                 );
-                ConnectionManager.getInstance().sendMessage(peer, request);
+                ConnectionManager.getInstance().queueMessage(peer, request);
             });
         }
 

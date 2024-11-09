@@ -132,7 +132,9 @@ public class Gui {
 
     private void downloadFile() {
         String selectedItem = resultList.getSelectedValue();
-        PeerRequestManager.getInstance().peerDownloadRequest(getFileDownloadInformation(selectedItem));
+        if(selectedItem != null) {
+            PeerRequestManager.getInstance().peerDownloadRequest(getFileDownloadInformation(selectedItem));
+        }
     }
 
     private Pair<FileSearchResult, List<PeerInformation>> getFileDownloadInformation(String fileName) {
