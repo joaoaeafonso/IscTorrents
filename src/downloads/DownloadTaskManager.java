@@ -11,10 +11,7 @@ import gui.Gui;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 
 
@@ -25,8 +22,7 @@ public class DownloadTaskManager {
     public static int MAX_NUM_THREADS = 5;
 
     private CountDownLatch latch;
-    private final List<FileBlockRequestMessageResponse> responses = new CopyOnWriteArrayList<>();
-    private List<Pair<PeerInformation, Integer>> downloadMetadata;
+    private final List<FileBlockRequestMessageResponse> responses = Collections.synchronizedList(new ArrayList<>());
 
     private DownloadTaskManager() { }
 

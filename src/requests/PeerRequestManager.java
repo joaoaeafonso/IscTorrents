@@ -9,13 +9,16 @@ import files.FileManager;
 import files.models.FileSearchResult;
 import gui.Gui;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
 public class PeerRequestManager {
 
     private static PeerRequestManager instance;
-    private final List<FileSearchResult> responses = new CopyOnWriteArrayList<>();
+    private final List<FileSearchResult> responses = Collections.synchronizedList(new ArrayList<>());
 
     private CountDownLatch latch;
 
@@ -60,7 +63,7 @@ public class PeerRequestManager {
 
     public void peerConnectionRequestResponse(PeerInformation peer) {
         ConnectionManager instance = ConnectionManager.getInstance();
-        if(instance.getAllConnectedPeers().contains(peer)) {
+        if(instance.getAllConnectedPeers().containsKey(peer.getIdentifier())) {
             System.out.println(peer+" is already present in the connections.");
             return;
         }
@@ -90,18 +93,18 @@ public class PeerRequestManager {
         ConnectionManager.getInstance().queueMessage(message.getPeerInformation(), answer);
     }
 
-    public synchronized void peerFileWordSearchRequest(List<PeerInformation> peers, String keyword) {
+    public synchronized void peerFileWordSearchRequest(Map<String, PeerInformation> peers, String keyword) {
         this.latch = new CountDownLatch(peers.size());
         ExecutorService executor = Executors.newFixedThreadPool(peers.size());
 
-        for(PeerInformation peer: peers) {
+        for(Map.Entry<String, PeerInformation> entry: peers.entrySet()) {
             executor.submit(() -> {
                 WordSearchMessage request = new WordSearchMessage(
                         ConnectionManager.getInstance().getInformation(),
                         keyword,
                         null
                 );
-                ConnectionManager.getInstance().queueMessage(peer, request);
+                ConnectionManager.getInstance().queueMessage(entry.getValue(), request);
             });
         }
 

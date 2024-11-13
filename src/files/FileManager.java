@@ -1,6 +1,5 @@
 package files;
 
-import common.Pair;
 import connection.ConnectionManager;
 import connection.messages.FileBlockRequestMessage;
 import connection.messages.FileBlockRequestMessageResponse;

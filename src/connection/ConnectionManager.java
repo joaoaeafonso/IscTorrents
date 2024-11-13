@@ -12,8 +12,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.*;
 
 import static utils.TorrentsUtils.generateIdentifier;
@@ -25,7 +25,7 @@ public class ConnectionManager extends Thread implements MessageVisitor {
     private final int port;
 
     private ServerSocket serverSocket;
-    private final List<PeerInformation> connectedPeers = new ArrayList<>();
+    private final Map<String, PeerInformation> connectedPeers = new HashMap<>();
 
     private final BlockingQueue<Pair<PeerInformation, Message>> messageQueue;
     private final ScheduledExecutorService scheduler;
@@ -61,12 +61,12 @@ public class ConnectionManager extends Thread implements MessageVisitor {
         return this.information;
     }
 
-    public synchronized List<PeerInformation> getAllConnectedPeers(){
+    public synchronized Map<String, PeerInformation> getAllConnectedPeers(){
         return this.connectedPeers;
     }
 
     public synchronized void addPeerToConnectedPeerList(PeerInformation peer){
-        this.connectedPeers.add(peer);
+        this.connectedPeers.put(peer.getIdentifier(), peer);
     }
 
     private void startServer() {
@@ -146,24 +146,42 @@ public class ConnectionManager extends Thread implements MessageVisitor {
 
     @Override
     public void visit(WordSearchMessage message) {
+        if(!isValidSender(message.getPeerInformation())){
+            return;
+        }
         PeerRequestManager.getInstance().peerFileSearchRequest(message);
     }
 
     @Override
     public void visit(WordSearchMessageResponse message) {
+        if(!isValidSender(message.getPeerInformation())){
+            return;
+        }
         PeerRequestManager.getInstance().addResponse(message.getResultList());
     }
 
     @Override
     public void visit(FileBlockRequestMessage message) {
-        System.out.println("FileBlockRequestMessage do peer -> "+message.getPeerInformation());
+        if(!isValidSender(message.getPeerInformation())){
+            return;
+        }
         PeerRequestManager.getInstance().peerFileBlockRequest(message);
     }
 
     @Override
     public void visit(FileBlockRequestMessageResponse message) {
-        System.out.println("FileBlockRequestMessageResponse do peer -> "+message.getPeerInformation());
+        if(!isValidSender(message.getPeerInformation())){
+            return;
+        }
         PeerRequestManager.getInstance().peerFileBlockResponse(message);
     }
 
+    private synchronized boolean isValidSender(PeerInformation peerInformation){
+        if(!connectedPeers.containsKey(peerInformation.getIdentifier())){
+            System.err.println("Message received from Peer ["+peerInformation+"]. " +
+                    "Peers is not part of the established connections. Ignoring message.");
+            return false;
+        }
+        return true;
+    }
 }

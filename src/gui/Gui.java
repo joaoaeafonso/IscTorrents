@@ -9,7 +9,6 @@ import requests.PeerRequestManager;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
 import java.util.*;
 import java.util.List;
 
