@@ -4,11 +4,13 @@ import connection.models.PeerInformation;
 
 public class FileBlockRequestMessageResponse extends Message {
     private final String fileHash;
+    private final String correspondingRequestMessageId;
     private final long offset;
     private final byte[] data;
 
-    public FileBlockRequestMessageResponse(PeerInformation sender, String fileHash, long offset, byte[] data) {
+    public FileBlockRequestMessageResponse(PeerInformation sender, String requestMessageId, String fileHash, long offset, byte[] data) {
         super(sender);
+        this.correspondingRequestMessageId = requestMessageId;
         this.fileHash = fileHash;
         this.offset = offset;
         this.data = data;
@@ -24,6 +26,10 @@ public class FileBlockRequestMessageResponse extends Message {
 
     public byte[] getData() {
         return data;
+    }
+
+    public String getCorrespondingRequestMessageId() {
+        return correspondingRequestMessageId;
     }
 
     @Override

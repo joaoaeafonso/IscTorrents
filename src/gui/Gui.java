@@ -11,6 +11,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static utils.TorrentsUtils.generateIdentifier;
 
@@ -131,22 +133,24 @@ public class Gui {
     }
 
     private void downloadFile() {
-        String selectedItem = resultList.getSelectedValue();
-        if(selectedItem != null) {
-            PeerRequestManager.getInstance().peerDownloadRequest(getFileDownloadInformation(selectedItem));
-        }
+        new Thread( () -> {
+            String selectedItem = resultList.getSelectedValue();
+            if(selectedItem != null) {
+                PeerRequestManager.getInstance().peerDownloadRequest(getFileDownloadInformation(selectedItem));
+            }
+        } ).start();
     }
 
-    public void handleDownloadFinished(HashMap<PeerInformation, List<FileBlockRequestMessage>> downloadProviders, long downloadDurationSec) {
+    public void handleDownloadFinished(ConcurrentHashMap<PeerInformation, AtomicInteger> downloadProviders, long downloadDurationSec) {
         StringBuilder messageBuilder = new StringBuilder();
         messageBuilder.append("Download Successfully finished\n\n");
 
         messageBuilder.append("Messages received per peer:\n");
-        for(Map.Entry<PeerInformation, List<FileBlockRequestMessage>> entry: downloadProviders.entrySet()) {
+        for(Map.Entry<PeerInformation, AtomicInteger> entry: downloadProviders.entrySet()) {
             messageBuilder.append("Peer [")
                     .append(entry.getKey())
                     .append("], Number of File Blocks [")
-                    .append(entry.getValue().size())
+                    .append(entry.getValue().get())
                     .append("] \n");
         }
 

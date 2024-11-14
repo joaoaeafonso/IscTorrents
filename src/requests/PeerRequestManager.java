@@ -39,6 +39,7 @@ public class PeerRequestManager {
 
         FileBlockRequestMessageResponse response = new FileBlockRequestMessageResponse(
                 ConnectionManager.getInstance().getInformation(),
+                message.getMessageId(),
                 message.getFileHash(),
                 message.getOffset(),
                 fileBlock

@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class DownloadTaskManager {
@@ -23,6 +24,10 @@ public class DownloadTaskManager {
 
     private CountDownLatch latch;
     private final List<FileBlockRequestMessageResponse> responses = Collections.synchronizedList(new ArrayList<>());
+
+    private final BlockingQueue<FileBlockRequestMessage> pendingRequestsQueue = new LinkedBlockingQueue<>();
+    private final ConcurrentHashMap<String, CompletableFuture<FileBlockRequestMessageResponse>> responseFutures = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<PeerInformation, AtomicInteger> downloadInformationMap = new ConcurrentHashMap<>();
 
     private DownloadTaskManager() { }
 
@@ -38,25 +43,25 @@ public class DownloadTaskManager {
 
     public synchronized void startDownloadRequest(Pair<FileSearchResult, List<PeerInformation>> downloadInformation) {
         List<FileBlockRequestMessage> fileBlockRequestMessages = createFileBlockRequestList(downloadInformation.getFirst());
-        int totalFileBlockMessages = fileBlockRequestMessages.size();
-        HashMap<PeerInformation, List<FileBlockRequestMessage>> downloadInfo =
-                handleFileBlockDistributionPerPeer(fileBlockRequestMessages, downloadInformation.getSecond());
-        sendFileBlockMessage(downloadInfo, totalFileBlockMessages, downloadInformation.getFirst().getFileName());
+        sendFileBlockMessage(fileBlockRequestMessages, downloadInformation.getSecond(), downloadInformation.getFirst().getFileName());
     }
 
-    private synchronized void sendFileBlockMessage(
-            HashMap<PeerInformation, List<FileBlockRequestMessage>> requestInformation,
-            int totalFileBlocks,
-            String fileName
-    ){
-        this.latch = new CountDownLatch(totalFileBlocks);
-        ExecutorService executor = Executors.newFixedThreadPool(MAX_NUM_THREADS);
+    private void sendFileBlockMessage(
+            List<FileBlockRequestMessage> fileBlockRequestMessageList,
+            List<PeerInformation> peerInformationList,
+            String fileName) {
+        this.latch = new CountDownLatch(fileBlockRequestMessageList.size());
+        ExecutorService executor = Executors.newFixedThreadPool(Math.min(peerInformationList.size(), MAX_NUM_THREADS));
+
+        for (PeerInformation peer : peerInformationList) {
+            downloadInformationMap.put(peer, new AtomicInteger(0));
+        }
 
         Instant start = Instant.now();
-        for(Map.Entry<PeerInformation, List<FileBlockRequestMessage>> entry: requestInformation.entrySet() ) {
-            for(FileBlockRequestMessage message: entry.getValue()) {
-                executor.submit(() -> ConnectionManager.getInstance().queueMessage(entry.getKey(), message));
-            }
+        this.pendingRequestsQueue.addAll(fileBlockRequestMessageList);
+
+        for(PeerInformation peer: peerInformationList) {
+            executor.submit( () -> processMessagesForPeer(peer) );
         }
 
         try {
@@ -67,22 +72,66 @@ public class DownloadTaskManager {
 
                 Instant end = Instant.now();
                 Duration timeElapsed = Duration.between(start, end);
-                Gui.getInstance().handleDownloadFinished(requestInformation, timeElapsed.getSeconds());
+                Gui.getInstance().handleDownloadFinished(downloadInformationMap, timeElapsed.getSeconds());
             } else {
                 System.out.println("Did not receive all the responses. Timeout occurred. Cannot save file.");
             }
 
-            responses.clear();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
             executor.shutdown();
+            responses.clear();
+            downloadInformationMap.clear();
+            pendingRequestsQueue.clear();
+            responseFutures.clear();
+            FileManager.getInstance().updateAvailableFilesInDirectory();
         }
     }
 
-    public void addResponse(FileBlockRequestMessageResponse fileBlock) {
-        responses.add(fileBlock);
-        this.latch.countDown();
+    private void processMessagesForPeer(PeerInformation peer) {
+        try {
+            while(!Thread.interrupted()) {
+                FileBlockRequestMessage message = pendingRequestsQueue.take();
+
+                downloadInformationMap.get(peer).incrementAndGet();
+
+                CompletableFuture<FileBlockRequestMessageResponse> future = new CompletableFuture<>();
+                responseFutures.put(message.getMessageId(), future);
+
+                ConnectionManager.getInstance().queueMessage(peer, message);
+
+                try {
+
+                    FileBlockRequestMessageResponse response = future.get(30, TimeUnit.SECONDS);
+
+                    synchronized (responses) {
+                        responses.add(response);
+                    }
+
+                    this.latch.countDown();
+
+                } catch (ExecutionException | TimeoutException ex) {
+                    // Makes sense to retry the message sending ?
+                } finally {
+                    responseFutures.remove(message.getMessageId());
+                }
+            }
+
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    public void addResponse(FileBlockRequestMessageResponse fileBlockResponse) {
+        String messageID = fileBlockResponse.getCorrespondingRequestMessageId();
+
+        CompletableFuture<FileBlockRequestMessageResponse> future = responseFutures.get(messageID);
+        if (future != null) {
+            future.complete(fileBlockResponse);
+        } else {
+            System.out.println("No pending request found for message ID: " + messageID);
+        }
     }
 
     private HashMap<PeerInformation, List<FileBlockRequestMessage>> handleFileBlockDistributionPerPeer(List<FileBlockRequestMessage> fileBlockRequestMessages, List<PeerInformation> peers) {
