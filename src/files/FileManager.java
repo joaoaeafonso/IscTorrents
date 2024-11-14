@@ -36,6 +36,10 @@ public class FileManager {
         }
     }
 
+    public synchronized void updateAvailableFilesInDirectory(){
+        getAllFilesInActuatingDir();
+    }
+
     public void assembleReceivedFile(List<FileBlockRequestMessageResponse> responses, String fileName) {
         List<FileBlockRequestMessageResponse> copiedResponses = new ArrayList<>(responses);
 
