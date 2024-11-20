@@ -2,13 +2,14 @@ package gui;
 
 import common.Pair;
 import connection.ConnectionManager;
-import connection.messages.FileBlockRequestMessage;
 import connection.models.PeerInformation;
 import files.models.FileSearchResult;
 import requests.PeerRequestManager;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -55,6 +56,8 @@ public class Gui {
     }
 
     public void open() {
+        handleClientShutdown();
+
         Dimension dimension = Toolkit.getDefaultToolkit().getScreenSize();
         frame.setSize(dimension.width / 2, dimension.height / 2);
         frame.setVisible(true);
@@ -109,6 +112,14 @@ public class Gui {
         searchButton.addActionListener(_ -> searchFile());
         downloadButton.addActionListener(_ -> downloadFile());
         connectButton.addActionListener(_ -> connectToPeerNode());
+    }
+
+    private void handleClientShutdown() {
+        this.frame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                PeerRequestManager.getInstance().peerDisconnecting();
+            }
+        });
     }
 
     private void connectToPeerNode() {
