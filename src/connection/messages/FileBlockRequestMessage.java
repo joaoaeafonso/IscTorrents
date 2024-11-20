@@ -4,13 +4,15 @@ import connection.models.PeerInformation;
 
 public class FileBlockRequestMessage extends Message {
 
-    private String fileHash;
-    private String fileName;
-    private long offset;
-    private long length;
+    private final String downloadId;
+    private final String fileHash;
+    private final String fileName;
+    private final long offset;
+    private final long length;
 
-    public FileBlockRequestMessage(PeerInformation sender, String hash, long offset, long length, String fileName) {
+    public FileBlockRequestMessage(PeerInformation sender, String hash, long offset, long length, String fileName, String downloadId) {
         super(sender);
+        this.downloadId = downloadId;
         this.fileHash = hash;
         this.fileName = fileName;
         this.offset = offset;
@@ -26,37 +28,24 @@ public class FileBlockRequestMessage extends Message {
         return fileHash;
     }
 
-    public void setFileHash(String fileHash) {
-        this.fileHash = fileHash;
-    }
-
     public long getOffset() {
         return offset;
-    }
-
-    public void setOffset(long offset) {
-        this.offset = offset;
     }
 
     public long getLength() {
         return length;
     }
 
-    public void setLength(long length) {
-        this.length = length;
-    }
-
     public String getFileName() {
         return fileName;
     }
 
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
+    public String getDownloadId() {
+        return downloadId;
     }
 
     @Override
     public String toString() {
         return "FileBlockRequestMessage: [hash: "+this.fileHash+"], [offset: "+this.offset+"], [length: "+this.length+"]";
     }
-
 }
