@@ -14,40 +14,39 @@ public class CustomLinkedBlockingQueue<T> {
     private final Condition notEmpty = lock.newCondition();
 
     public CustomLinkedBlockingQueue(int capacity) {
-        if (capacity <= 0) throw new IllegalArgumentException("Capacity must be greater than 0");
+        if (capacity <= 0) {
+            throw new IllegalArgumentException("Capacity must be greater than 0");
+        }
         this.capacity = capacity;
     }
 
-    // Adds an item to the queue, blocking if the queue is full
     public void put(T item) throws InterruptedException {
         lock.lock();
         try {
             while (queue.size() == capacity) {
-                notFull.await(); // Wait until space is available
+                notFull.await();
             }
             queue.add(item);
-            notEmpty.signal(); // Notify a waiting consumer
+            notEmpty.signal();
         } finally {
             lock.unlock();
         }
     }
 
-    // Retrieves and removes the head of the queue, blocking if the queue is empty
     public T take() throws InterruptedException {
         lock.lock();
         try {
             while (queue.isEmpty()) {
-                notEmpty.await(); // Wait until an item is available
+                notEmpty.await();
             }
             T item = queue.removeFirst();
-            notFull.signal(); // Notify a waiting producer
+            notFull.signal();
             return item;
         } finally {
             lock.unlock();
         }
     }
 
-    // Returns the current size of the queue
     public int size() {
         lock.lock();
         try {
@@ -57,7 +56,6 @@ public class CustomLinkedBlockingQueue<T> {
         }
     }
 
-    // Returns the capacity of the queue
     public int getCapacity() {
         return capacity;
     }
