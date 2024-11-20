@@ -145,6 +145,15 @@ public class ConnectionManager extends Thread implements MessageVisitor {
     }
 
     @Override
+    public void visit(NewDisconnectionRequest message) {
+        System.out.println("Received a disconnect request from Peer = "+message.getPeerInformation());
+
+        if(this.connectedPeers.get(message.getPeerInformation().getIdentifier()) != null) {
+            this.connectedPeers.remove(message.getPeerInformation().getIdentifier());
+        }
+    }
+
+    @Override
     public void visit(WordSearchMessage message) {
         if(!isValidSender(message.getPeerInformation())){
             return;

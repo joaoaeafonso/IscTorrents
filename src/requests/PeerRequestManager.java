@@ -34,6 +34,15 @@ public class PeerRequestManager {
         return instance;
     }
 
+    public void peerDisconnecting() {
+        ConnectionManager connectionManagerInstance = ConnectionManager.getInstance();
+
+        for(PeerInformation connectedPeer: connectionManagerInstance.getAllConnectedPeers().values()){
+            NewDisconnectionRequest request = new NewDisconnectionRequest(connectionManagerInstance.getInformation());
+            connectionManagerInstance.queueMessage(connectedPeer, request);
+        }
+    }
+
     public void peerFileBlockRequest(FileBlockRequestMessage message) {
         byte[] fileBlock = FileManager.getInstance().getFileBlock(message);
 
