@@ -4,6 +4,7 @@ import common.Pair;
 import connection.ConnectionManager;
 import connection.messages.*;
 import connection.models.PeerInformation;
+import downloads.DownloadTask;
 import downloads.DownloadTaskManager;
 import files.FileManager;
 import files.models.FileSearchResult;
@@ -19,6 +20,8 @@ public class PeerRequestManager {
 
     private static PeerRequestManager instance;
     private final List<FileSearchResult> responses = Collections.synchronizedList(new ArrayList<>());
+
+    private final ConcurrentHashMap<String, DownloadTask> activeDownloadTasks = new ConcurrentHashMap<>();
 
     private CountDownLatch latch;
 
@@ -39,6 +42,7 @@ public class PeerRequestManager {
 
         FileBlockRequestMessageResponse response = new FileBlockRequestMessageResponse(
                 ConnectionManager.getInstance().getInformation(),
+                message.getDownloadId(),
                 message.getMessageId(),
                 message.getFileHash(),
                 message.getOffset(),
@@ -48,8 +52,23 @@ public class PeerRequestManager {
         ConnectionManager.getInstance().queueMessage(message.getPeerInformation(), response);
     }
 
-    public void peerFileBlockResponse(FileBlockRequestMessageResponse message){
-        DownloadTaskManager.getInstance().addResponse(message);
+    public synchronized void registerDownloadTask(String downloadId, DownloadTask task) {
+        this.activeDownloadTasks.put(downloadId, task);
+    }
+
+    public synchronized void unregisterDownloadTask(String downloadId) {
+        this.activeDownloadTasks.remove(downloadId);
+    }
+
+    public void peerFileBlockResponse(FileBlockRequestMessageResponse message) {
+        String downloadId = message.getDownloadId();
+        DownloadTask task = this.activeDownloadTasks.get(downloadId);
+
+        if (task != null) {
+            task.addResponse(message);
+        } else {
+            System.out.println("No active download task found for ID: " + downloadId);
+        }
     }
 
     public void peerDownloadRequest(Pair<FileSearchResult, List<PeerInformation>> downloadInformation) {
