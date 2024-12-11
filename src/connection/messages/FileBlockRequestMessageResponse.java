@@ -3,13 +3,16 @@ package connection.messages;
 import connection.models.PeerInformation;
 
 public class FileBlockRequestMessageResponse extends Message {
+
+    private final String downloadId;
     private final String fileHash;
     private final String correspondingRequestMessageId;
     private final long offset;
     private final byte[] data;
 
-    public FileBlockRequestMessageResponse(PeerInformation sender, String requestMessageId, String fileHash, long offset, byte[] data) {
+    public FileBlockRequestMessageResponse(PeerInformation sender, String downloadId, String requestMessageId, String fileHash, long offset, byte[] data) {
         super(sender);
+        this.downloadId = downloadId;
         this.correspondingRequestMessageId = requestMessageId;
         this.fileHash = fileHash;
         this.offset = offset;
@@ -30,6 +33,10 @@ public class FileBlockRequestMessageResponse extends Message {
 
     public String getCorrespondingRequestMessageId() {
         return correspondingRequestMessageId;
+    }
+
+    public String getDownloadId() {
+        return downloadId;
     }
 
     @Override
